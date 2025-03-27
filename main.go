@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/it-a-me/clavlang/interpreter"
 	"github.com/it-a-me/clavlang/parser"
 	"github.com/it-a-me/clavlang/scanner"
 )
@@ -65,5 +66,8 @@ func run(text string) {
 		}
 		os.Exit(1)
 	}
-	log.Println(parser.AstString(expr))
+	log.Println(parser.LispExpr(expr))
+	if err := interpreter.Interpret(expr); err != nil {
+		log.Fatal(err)
+	}
 }

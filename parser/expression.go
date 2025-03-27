@@ -30,18 +30,18 @@ type Unary struct {
 	Right    Expr
 }
 
-func AstString(expr Expr) string {
+func LispExpr(expr Expr) string {
 	if l, ok := expr.(Literal); ok {
 		return fmt.Sprintf("%v", l.Value)
 	}
 
 	value := reflect.ValueOf(expr)
-	s := "("
+	s := "(" + value.Type().Name()
 	for i := range value.NumField() {
 		f := value.Field(i)
 		switch v := f.Interface().(type) {
 		case Expr:
-			s += " " + AstString(v)
+			s += " " + LispExpr(v)
 		case token.Token:
 			s += " " + v.Lexeme
 		default:

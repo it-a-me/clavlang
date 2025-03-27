@@ -2,6 +2,7 @@ package scanner
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/it-a-me/clavlang/token"
 )
@@ -177,7 +178,11 @@ func (s *Scanner) handleNumber() {
 		}
 	}
 	content := s.source[s.start:s.current]
-	s.addToken(token.Number, content)
+	f, err := strconv.ParseFloat(content, 64)
+	if err != nil {
+		panic("Error parsing float: " + err.Error())
+	}
+	s.addToken(token.Number, f)
 }
 
 func (s *Scanner) handleComment() {
