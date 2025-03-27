@@ -31,22 +31,35 @@ type Unary struct {
 	Right    Expr
 }
 
+func LispStmt(stmt Stmt) string {
+	switch s := stmt.(type) {
+	case Print:
+		return "(print " + LispExpr(s.Inner) + ")"
+	case Expression:
+		return LispExpr(s.Inner)
+	}
+	panic("Unreachable")
+}
+
 func LispExpr(expr Expr) string {
 	if l, ok := expr.(Literal); ok {
 		return fmt.Sprintf("%v", l.Value)
 	}
 
 	value := reflect.ValueOf(expr)
-	s := "(" + value.Type().Name()
+	s := "("
 	for i := range value.NumField() {
 		f := value.Field(i)
+		if i != 0 {
+			s += " "
+		}
 		switch v := f.Interface().(type) {
 		case Expr:
-			s += " " + LispExpr(v)
+			s += LispExpr(v)
 		case token.Token:
-			s += " " + v.Lexeme
+			s += v.Lexeme
 		default:
-			s += " " + f.String()
+			s += f.String()
 		}
 	}
 	s += ")"

@@ -9,12 +9,29 @@ import (
 	"github.com/it-a-me/clavlang/types"
 )
 
-func Interpret(expr parser.Expr) error {
-	res, err := evaluate(expr)
-	if err != nil {
-		return err
+func Interpret(statements []parser.Stmt) error {
+	for _, stmt := range statements {
+		if err := execute(stmt); err != nil {
+			return err
+		}
 	}
-	fmt.Printf("=%v\n", res)
+	return nil
+}
+
+func execute(stmt parser.Stmt) error {
+	switch s := stmt.(type) {
+	case parser.Print:
+		val, err := evaluate(s.Inner)
+		if err != nil {
+			return err
+		}
+		fmt.Println(val.String())
+	case parser.Expression:
+		_, err := evaluate(s.Inner)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

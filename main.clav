@@ -1,0 +1,4 @@
+print 1;
+print true;
+print ( 88 / 22 + 8 / 2 ) * (1-2);
+print "cow" + " " +"horse";

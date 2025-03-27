@@ -14,12 +14,47 @@ func NewParser(tokens []token.Token) Parser {
 	return Parser{tokens: tokens}
 }
 
-func (p *Parser) Parse() (Expr, []error) {
-	expr, err := p.expression()
-	if err != nil {
-		return nil, []error{err}
+func (p *Parser) Parse() ([]Stmt, []error) {
+	stmts := []Stmt{}
+	var errs []error
+	for !p.isAtEnd() {
+		s, err := p.statement()
+		if err != nil {
+			errs = append(errs, err)
+		} else {
+			stmts = append(stmts, s)
+		}
 	}
-	return expr, nil
+	return stmts, errs
+}
+
+func (p *Parser) statement() (Stmt, error) {
+	if p.match(token.Print) {
+		return p.printStatement()
+	}
+	return p.expressionStatement()
+}
+
+func (p *Parser) printStatement() (Stmt, error) {
+	value, err := p.expression()
+	if err != nil {
+		return nil, err
+	}
+	if _, err := p.consume(token.Semicolon, "Expect ';' after value"); err != nil {
+		return nil, err
+	}
+	return Print{Inner: value}, nil
+}
+
+func (p *Parser) expressionStatement() (Stmt, error) {
+	value, err := p.expression()
+	if err != nil {
+		return nil, err
+	}
+	if _, err := p.consume(token.Semicolon, "Expect ';' after value"); err != nil {
+		return nil, err
+	}
+	return Expression{Inner: value}, nil
 }
 
 func (p *Parser) expression() (Expr, error) {

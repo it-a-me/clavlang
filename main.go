@@ -10,7 +10,10 @@ import (
 	"github.com/it-a-me/clavlang/scanner"
 )
 
-const MinArgs = 2
+const (
+	MinArgs = 2
+	Verbose = false
+)
 
 func main() {
 	log.SetFlags(0)
@@ -20,8 +23,9 @@ func main() {
 	}
 	if len(os.Args) == MinArgs {
 		runFile(os.Args[1])
+	} else {
+		repl()
 	}
-	repl()
 }
 
 func repl() {
@@ -52,11 +56,13 @@ func run(text string) {
 		}
 		os.Exit(1)
 	}
-	log.Print("[")
-	for _, t := range tokens {
-		log.Printf(" %s", t.Type.String())
+	if Verbose {
+		log.Print("[")
+		for _, t := range tokens {
+			log.Printf(" %s", t.Type.String())
+		}
+		log.Println("]")
 	}
-	log.Println("]")
 
 	p := parser.NewParser(tokens)
 	expr, errs := p.Parse()
@@ -66,7 +72,11 @@ func run(text string) {
 		}
 		os.Exit(1)
 	}
-	log.Println(parser.LispExpr(expr))
+	if Verbose {
+		for _, s := range expr {
+			log.Println(parser.LispStmt(s))
+		}
+	}
 	if err := interpreter.Interpret(expr); err != nil {
 		log.Fatal(err)
 	}
