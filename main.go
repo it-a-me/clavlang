@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"fmt"
 	"log"
 	"os"
 
@@ -10,13 +9,15 @@ import (
 	"github.com/it-a-me/clavlang/scanner"
 )
 
+const MinArgs = 2
+
 func main() {
 	log.SetFlags(0)
 	log.SetPrefix("-- ")
-	if len(os.Args) > 2 {
+	if len(os.Args) > MinArgs {
 		log.Fatal("Please supply 0-1 file arguments")
 	}
-	if len(os.Args) == 2 {
+	if len(os.Args) == MinArgs {
 		runFile(os.Args[1])
 	}
 	repl()
@@ -64,5 +65,5 @@ func run(text string) {
 		}
 		os.Exit(1)
 	}
-	fmt.Println(parser.AstString(expr))
+	log.Println(parser.AstString(expr))
 }

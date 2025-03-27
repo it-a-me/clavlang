@@ -2,12 +2,12 @@ package token
 
 import "fmt"
 
-//go:generate stringer -type TokenType
-type TokenType int
+//go:generate stringer -type Type
+type Type int
 
 const (
 	// Single-character tokens.
-	LeftParen TokenType = iota
+	LeftParen Type = iota
 
 	RightParen
 	LeftBrace
@@ -62,13 +62,13 @@ const (
 )
 
 type Token struct {
-	Type    TokenType
+	Type    Type
 	Lexeme  string
 	Literal any
 	Line    int
 }
 
-func NewToken(tokenType TokenType, lexeme string, literal any, line int) Token {
+func NewToken(tokenType Type, lexeme string, literal any, line int) Token {
 	return Token{
 		tokenType,
 		lexeme,

@@ -140,28 +140,37 @@ func (p *Parser) synchronize() {
 
 		switch p.peek().Type {
 		case token.Class:
+			fallthrough
 		case token.Fun:
+			fallthrough
 		case token.Var:
+			fallthrough
 		case token.For:
+			fallthrough
 		case token.If:
+			fallthrough
 		case token.While:
+			fallthrough
 		case token.Print:
+			fallthrough
 		case token.Return:
 			return
+		default:
+			_ = 0
 		}
 
 		p.advance()
 	}
 }
 
-func (p *Parser) consume(tokenType token.TokenType, orError string) (token.Token, error) {
+func (p *Parser) consume(tokenType token.Type, orError string) (token.Token, error) {
 	if p.check(tokenType) {
 		return p.advance(), nil
 	}
 	return token.Token{}, p.newError(orError)
 }
 
-func (p *Parser) match(types ...token.TokenType) bool {
+func (p *Parser) match(types ...token.Type) bool {
 	for _, t := range types {
 		if p.check(t) {
 			p.advance()
@@ -171,7 +180,7 @@ func (p *Parser) match(types ...token.TokenType) bool {
 	return false
 }
 
-func (p *Parser) check(tokenType token.TokenType) bool {
+func (p *Parser) check(tokenType token.Type) bool {
 	if p.isAtEnd() {
 		return false
 	}

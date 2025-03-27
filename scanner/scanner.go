@@ -27,7 +27,9 @@ func NewScanner(source string) Scanner {
 func (s *Scanner) Scan() ([]token.Token, []error) {
 	for !s.isAtEnd() {
 		s.start = s.current
-		s.scanToken()
+		if err := s.scanToken(); err != nil {
+			s.errors = append(s.errors, err)
+		}
 	}
 	s.tokens = append(s.tokens, token.NewToken(token.EOF, "", nil, s.line))
 	return s.tokens, s.errors
@@ -35,6 +37,14 @@ func (s *Scanner) Scan() ([]token.Token, []error) {
 
 func (s *Scanner) scanToken() error {
 	c := s.advance()
+	switch {
+	case isDigit(c):
+		s.handleNumber()
+		return nil
+	case isAlpha(c):
+		s.handleIdentifier()
+		return nil
+	}
 	switch c {
 	case '(':
 		s.addToken(token.LeftParen, nil)
@@ -82,10 +92,7 @@ func (s *Scanner) scanToken() error {
 		}
 	case '/':
 		if s.match('/') {
-			// A comment goes until the end of the line.
-			for s.peek() != '\n' && !s.isAtEnd() {
-				s.advance()
-			}
+			s.handleComment()
 		} else {
 			s.addToken(token.Slash, nil)
 		}
@@ -95,27 +102,20 @@ func (s *Scanner) scanToken() error {
 	case '\n':
 		s.line++
 	case '"':
-		s.handleString()
+		return s.handleString()
 	default:
-		switch {
-		case isDigit(c):
-			s.handleNumber()
-		case isAlpha(c):
-			s.handleIdentifier()
-		default:
-			return s.NewError(fmt.Sprintf("Unexpected character '%c'", c))
-		}
+		return s.NewError(fmt.Sprintf("Unexpected character '%c'", c))
 	}
 	return nil
 }
 
-func (s *Scanner) addToken(tokenType token.TokenType, literal any) {
+func (s *Scanner) addToken(tokenType token.Type, literal any) {
 	lexeme := s.source[s.start:s.current]
 	s.tokens = append(s.tokens, token.NewToken(tokenType, lexeme, literal, s.line))
 }
 
 func (s *Scanner) advance() byte {
-	s.current += 1
+	s.current++
 	return s.source[s.current-1]
 }
 
@@ -148,7 +148,7 @@ func (s *Scanner) isAtEnd() bool {
 	return s.current >= len(s.source)
 }
 
-func (s *Scanner) handleString() {
+func (s *Scanner) handleString() error {
 	for s.peek() != '"' && !s.isAtEnd() {
 		if s.peek() == '\n' {
 			s.line++
@@ -156,8 +156,7 @@ func (s *Scanner) handleString() {
 		s.advance()
 	}
 	if s.isAtEnd() {
-		s.NewError("Unterminated string")
-		return
+		return s.NewError("Unterminated string")
 	}
 
 	// The closing quote
@@ -165,6 +164,7 @@ func (s *Scanner) handleString() {
 
 	content := s.source[s.start+1 : s.current-1]
 	s.addToken(token.String, content)
+	return nil
 }
 
 func (s *Scanner) handleNumber() {
@@ -180,12 +180,19 @@ func (s *Scanner) handleNumber() {
 	s.addToken(token.Number, content)
 }
 
+func (s *Scanner) handleComment() {
+	// A comment goes until the end of the line.
+	for s.peek() != '\n' && !s.isAtEnd() {
+		s.advance()
+	}
+}
+
 func (s *Scanner) handleIdentifier() {
 	for isAlpha(s.peek()) || isDigit(s.peek()) {
 		s.advance()
 	}
 	text := s.source[s.start:s.current]
-	if keyword, exists := keywords[text]; exists {
+	if keyword, exists := Keywords(text); exists {
 		s.addToken(keyword, nil)
 	} else {
 		s.addToken(token.Identifier, nil)
@@ -197,7 +204,6 @@ func (s *Scanner) NewError(err string) error {
 		s.line,
 		err,
 	}
-	s.errors = append(s.errors, error(e))
 	return &e
 }
 
