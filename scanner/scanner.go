@@ -14,7 +14,7 @@ type Scanner struct {
 	current int
 	line    int
 
-	errors []ScanError
+	errors []error
 }
 
 func NewScanner(source string) Scanner {
@@ -24,7 +24,7 @@ func NewScanner(source string) Scanner {
 	}
 }
 
-func (s *Scanner) Scan() ([]token.Token, []ScanError) {
+func (s *Scanner) Scan() ([]token.Token, []error) {
 	for !s.isAtEnd() {
 		s.start = s.current
 		s.scanToken()
@@ -33,7 +33,7 @@ func (s *Scanner) Scan() ([]token.Token, []ScanError) {
 	return s.tokens, s.errors
 }
 
-func (s *Scanner) scanToken() *ScanError {
+func (s *Scanner) scanToken() error {
 	c := s.advance()
 	switch c {
 	case '(':
@@ -176,6 +176,8 @@ func (s *Scanner) handleNumber() {
 			s.advance()
 		}
 	}
+	content := s.source[s.start:s.current]
+	s.addToken(token.Number, content)
 }
 
 func (s *Scanner) handleIdentifier() {
@@ -190,12 +192,12 @@ func (s *Scanner) handleIdentifier() {
 	}
 }
 
-func (s *Scanner) NewError(err string) *ScanError {
+func (s *Scanner) NewError(err string) error {
 	e := ScanError{
 		s.line,
 		err,
 	}
-	s.errors = append(s.errors, e)
+	s.errors = append(s.errors, error(e))
 	return &e
 }
 

@@ -7,6 +7,6 @@ type ScanError struct {
 	err  string
 }
 
-func (e *ScanError) String() string {
+func (e ScanError) Error() string {
 	return fmt.Sprintf("Error on line %d: %s", e.line, e.err)
 }

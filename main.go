@@ -2,9 +2,11 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"log"
 	"os"
 
+	"github.com/it-a-me/clavlang/parser"
 	"github.com/it-a-me/clavlang/scanner"
 )
 
@@ -42,13 +44,25 @@ func run(text string) {
 	s := scanner.NewScanner(text)
 
 	tokens, errs := s.Scan()
-	for _, t := range tokens {
-		log.Println(t.String())
-	}
 	if errs != nil {
 		for _, err := range errs {
-			log.Print(err.String())
+			log.Print(err)
 		}
 		os.Exit(1)
 	}
+	log.Print("[")
+	for _, t := range tokens {
+		log.Printf(" %s", t.Type.String())
+	}
+	log.Println("]")
+
+	p := parser.NewParser(tokens)
+	expr, errs := p.Parse()
+	if errs != nil {
+		for _, err := range errs {
+			log.Print(err)
+		}
+		os.Exit(1)
+	}
+	fmt.Println(parser.AstString(expr))
 }
