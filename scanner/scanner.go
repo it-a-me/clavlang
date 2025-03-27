@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/it-a-me/clavlang/token"
+	"github.com/it-a-me/clavlang/types"
 )
 
 type Scanner struct {
@@ -110,7 +111,7 @@ func (s *Scanner) scanToken() error {
 	return nil
 }
 
-func (s *Scanner) addToken(tokenType token.Type, literal any) {
+func (s *Scanner) addToken(tokenType token.Type, literal types.ClavType) {
 	lexeme := s.source[s.start:s.current]
 	s.tokens = append(s.tokens, token.NewToken(tokenType, lexeme, literal, s.line))
 }
@@ -164,7 +165,7 @@ func (s *Scanner) handleString() error {
 	s.advance()
 
 	content := s.source[s.start+1 : s.current-1]
-	s.addToken(token.String, content)
+	s.addToken(token.String, types.String{Value: content})
 	return nil
 }
 
@@ -182,7 +183,7 @@ func (s *Scanner) handleNumber() {
 	if err != nil {
 		panic("Error parsing float: " + err.Error())
 	}
-	s.addToken(token.Number, f)
+	s.addToken(token.Number, types.Number{Value: f})
 }
 
 func (s *Scanner) handleComment() {

@@ -5,6 +5,7 @@ import (
 	"reflect"
 
 	"github.com/it-a-me/clavlang/token"
+	"github.com/it-a-me/clavlang/types"
 )
 
 type Expr interface {
@@ -22,7 +23,7 @@ type Grouping struct {
 }
 
 type Literal struct {
-	Value any
+	Value types.ClavType
 }
 
 type Unary struct {

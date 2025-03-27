@@ -6,6 +6,7 @@ import (
 
 	"github.com/it-a-me/clavlang/parser"
 	"github.com/it-a-me/clavlang/token"
+	"github.com/it-a-me/clavlang/types"
 )
 
 func Interpret(expr parser.Expr) error {
@@ -17,7 +18,7 @@ func Interpret(expr parser.Expr) error {
 	return nil
 }
 
-func evaluate(expr parser.Expr) (any, error) {
+func evaluate(expr parser.Expr) (types.ClavType, error) {
 	switch e := expr.(type) {
 	case parser.Literal:
 		return evalutateLiteral(e), nil
@@ -31,29 +32,31 @@ func evaluate(expr parser.Expr) (any, error) {
 	panic("Unreachable")
 }
 
-func evalutateLiteral(expr parser.Literal) any {
+func evalutateLiteral(expr parser.Literal) types.ClavType {
 	return expr.Value
 }
 
-func evalutateGrouping(expr parser.Grouping) (any, error) {
+func evalutateGrouping(expr parser.Grouping) (types.ClavType, error) {
 	return evaluate(expr.Expression)
 }
 
-func evalutateUnary(expr parser.Unary) (any, error) {
+func evalutateUnary(expr parser.Unary) (types.ClavType, error) {
 	right, err := evaluate(expr.Right)
 	if err != nil {
 		return nil, err
 	}
 	switch expr.Operator.Type {
 	case token.Bang:
-		return !right.(bool), nil
+		old := right.(types.Boolean)
+		return types.Boolean{Value: !old.Value}, nil
 	case token.Minus:
-		return -right.(float64), nil
+		old := right.(types.Number)
+		return types.Number{Value: -old.Value}, nil
 	}
 	panic("Unreachable")
 }
 
-func evalutateBinary(expr parser.Binary) (any, error) {
+func evalutateBinary(expr parser.Binary) (types.ClavType, error) {
 	left, err := evaluate(expr.Left)
 	if err != nil {
 		return nil, err
@@ -67,52 +70,62 @@ func evalutateBinary(expr parser.Binary) (any, error) {
 		if ok, t := numeric(left, right); !ok {
 			return nil, newInterpreterError("Cannot subtract non-numeric type "+t, expr.Operator)
 		}
-		return left.(float64) - right.(float64), nil
+		value := left.(types.Number).Value - right.(types.Number).Value
+		return types.Number{Value: value}, nil
 	case token.Slash:
 		if ok, t := numeric(left, right); !ok {
 			return nil, newInterpreterError("Cannot divide non-numeric type "+t, expr.Operator)
 		}
-		return left.(float64) / right.(float64), nil
+		value := left.(types.Number).Value / right.(types.Number).Value
+		return types.Number{Value: value}, nil
 	case token.Star:
 		if ok, t := numeric(left, right); !ok {
 			return nil, newInterpreterError("Cannot multiply non-numeric type "+t, expr.Operator)
 		}
-		return left.(float64) * right.(float64), nil
+		value := left.(types.Number).Value * right.(types.Number).Value
+		return types.Number{Value: value}, nil
 	case token.EqualEqual:
-		return isEqual(expr.Operator, left, right)
+		eq, err := isEqual(expr.Operator, left, right)
+		return types.Boolean{Value: eq}, err
 	case token.BangEqual:
 		eq, err := isEqual(expr.Operator, left, right)
-		return !eq, err
+		return types.Boolean{Value: !eq}, err
 	case token.Greater:
 		if ok, t := numeric(left, right); !ok {
 			return nil, newInterpreterError("Cannot order non-numeric type "+t, expr.Operator)
 		}
-		return left.(float64) > right.(float64), nil
+		value := left.(types.Number).Value > right.(types.Number).Value
+		return types.Boolean{Value: value}, nil
 	case token.GreaterEqual:
 		if ok, t := numeric(left, right); !ok {
 			return nil, newInterpreterError("Cannot order non-numeric type "+t, expr.Operator)
 		}
-		return left.(float64) >= right.(float64), nil
+		value := left.(types.Number).Value >= right.(types.Number).Value
+		return types.Boolean{Value: value}, nil
 	case token.Less:
 		if ok, t := numeric(left, right); !ok {
 			return nil, newInterpreterError("Cannot order non-numeric type "+t, expr.Operator)
 		}
-		return left.(float64) < right.(float64), nil
+		value := left.(types.Number).Value < right.(types.Number).Value
+		return types.Boolean{Value: value}, nil
 	case token.LessEqual:
 		if ok, t := numeric(left, right); !ok {
 			return nil, newInterpreterError("Cannot order non-numeric type "+t, expr.Operator)
 		}
-		return left.(float64) <= right.(float64), nil
+		value := left.(types.Number).Value <= right.(types.Number).Value
+		return types.Boolean{Value: value}, nil
 	case token.Plus:
-		if l, ok := left.(float64); ok {
-			if r, ok := right.(float64); ok {
-				return l + r, nil
+		if l, ok := left.(types.Number); ok {
+			if r, ok := right.(types.Number); ok {
+				value := l.Value + r.Value
+				return types.Number{Value: value}, nil
 			}
 			return nil, newInterpreterError("Cannot add values of different types", expr.Operator)
 		}
-		if l, ok := left.(string); ok {
-			if r, ok := right.(string); ok {
-				return l + r, nil
+		if l, ok := left.(types.String); ok {
+			if r, ok := right.(types.String); ok {
+				value := l.Value + r.Value
+				return types.String{Value: value}, nil
 			}
 			return nil, newInterpreterError("Cannot add values of different types", expr.Operator)
 		}
@@ -123,29 +136,30 @@ func evalutateBinary(expr parser.Binary) (any, error) {
 
 func numeric(args ...any) (bool, string) {
 	for _, a := range args {
-		if _, ok := a.(float64); !ok {
+		if _, ok := a.(types.Number); !ok {
 			return false, reflect.TypeOf(a).Name()
 		}
 	}
 	return true, ""
 }
 
-func isEqual(equal token.Token, left, right any) (bool, error) {
-	if left == nil && right == nil {
-		return true, nil
-	}
+func isEqual(equal token.Token, left, right types.ClavType) (bool, error) {
 	switch l := left.(type) {
-	case float64:
-		if r, ok := right.(float64); ok {
-			return l == r, nil
+	case types.Number:
+		if r, ok := right.(types.Number); ok {
+			return l.Value == r.Value, nil
 		}
-	case string:
-		if r, ok := right.(string); ok {
-			return l == r, nil
+	case types.String:
+		if r, ok := right.(types.String); ok {
+			return l.Value == r.Value, nil
 		}
-	case bool:
-		if r, ok := right.(bool); ok {
-			return l == r, nil
+	case types.Boolean:
+		if r, ok := right.(types.Boolean); ok {
+			return l.Value == r.Value, nil
+		}
+	case types.Nil:
+		if _, ok := right.(types.Nil); ok {
+			return true, nil
 		}
 	}
 	return false, newInterpreterError("Cannot compare values of different types", equal)

@@ -2,6 +2,7 @@ package parser
 
 import (
 	"github.com/it-a-me/clavlang/token"
+	"github.com/it-a-me/clavlang/types"
 )
 
 type Parser struct {
@@ -109,9 +110,9 @@ func (p *Parser) unary() (Expr, error) {
 func (p *Parser) primary() (Expr, error) {
 	switch {
 	case p.match(token.False):
-		return Expr(Literal{Value: false}), nil
+		return Expr(Literal{Value: types.Boolean{Value: false}}), nil
 	case p.match(token.True):
-		return Expr(Literal{Value: true}), nil
+		return Expr(Literal{Value: types.Boolean{Value: true}}), nil
 	case p.match(token.Nil):
 		return Expr(Literal{Value: nil}), nil
 	case p.match(token.Number, token.String):

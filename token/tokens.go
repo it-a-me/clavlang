@@ -1,6 +1,10 @@
 package token
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/it-a-me/clavlang/types"
+)
 
 //go:generate stringer -type Type
 type Type int
@@ -64,11 +68,11 @@ const (
 type Token struct {
 	Type    Type
 	Lexeme  string
-	Literal any
+	Literal types.ClavType
 	Line    int
 }
 
-func NewToken(tokenType Type, lexeme string, literal any, line int) Token {
+func NewToken(tokenType Type, lexeme string, literal types.ClavType, line int) Token {
 	return Token{
 		tokenType,
 		lexeme,
