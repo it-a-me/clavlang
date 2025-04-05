@@ -77,7 +77,8 @@ func run(text string) {
 			log.Println(parser.LispStmt(s))
 		}
 	}
-	if err := interpreter.Interpret(expr); err != nil {
+	inter := interpreter.NewInterpreter()
+	if err := inter.Interpret(expr); err != nil {
 		log.Fatal(err)
 	}
 }

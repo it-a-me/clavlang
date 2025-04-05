@@ -18,7 +18,7 @@ func (p *Parser) Parse() ([]Stmt, []error) {
 	stmts := []Stmt{}
 	var errs []error
 	for !p.isAtEnd() {
-		s, err := p.statement()
+		s, err := p.declaration()
 		if err != nil {
 			errs = append(errs, err)
 		} else {
@@ -26,6 +26,35 @@ func (p *Parser) Parse() ([]Stmt, []error) {
 		}
 	}
 	return stmts, errs
+}
+
+func (p *Parser) declaration() (Stmt, error) {
+	if p.match(token.Var) {
+		return p.varDeclaration()
+	}
+
+	stmt, err := p.statement()
+	if err != nil {
+		p.synchronize()
+		return nil, err
+	}
+	return stmt, nil
+}
+
+func (p *Parser) varDeclaration() (Stmt, error) {
+	name, err := p.consume(token.Identifier, "Expect variable name")
+	if err != nil {
+		return nil, err
+	}
+	var initializer Expr
+	if p.match(token.Equal) {
+		initializer, err = p.expression()
+		if err != nil {
+			return nil, err
+		}
+	}
+	p.consume(token.Semicolon, "Expect ';' after variable declaration")
+	return Var{Name: name, Initializer: initializer}, nil
 }
 
 func (p *Parser) statement() (Stmt, error) {
@@ -162,6 +191,8 @@ func (p *Parser) primary() (Expr, error) {
 			return nil, err
 		}
 		return Expr(Grouping{Expression: expr}), nil
+	case p.match(token.Identifier):
+		return Variable{p.previous()}, nil
 	}
 	return nil, p.newError("Expected Expression")
 }

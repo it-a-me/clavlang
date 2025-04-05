@@ -9,56 +9,76 @@ import (
 	"github.com/it-a-me/clavlang/types"
 )
 
-func Interpret(statements []parser.Stmt) error {
+func (i *Interpreter) Interpret(statements []parser.Stmt) error {
 	for _, stmt := range statements {
-		if err := execute(stmt); err != nil {
+		if err := i.execute(stmt); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func execute(stmt parser.Stmt) error {
+type Interpreter struct {
+	environment Environment
+}
+
+func NewInterpreter() Interpreter {
+	return Interpreter{environment: NewEnvironment()}
+}
+
+func (i *Interpreter) execute(stmt parser.Stmt) error {
 	switch s := stmt.(type) {
 	case parser.Print:
-		val, err := evaluate(s.Inner)
+		val, err := i.evaluate(s.Inner)
 		if err != nil {
 			return err
 		}
 		fmt.Println(val.String())
 	case parser.Expression:
-		_, err := evaluate(s.Inner)
+		_, err := i.evaluate(s.Inner)
 		if err != nil {
 			return err
 		}
+	case parser.Var:
+		var value types.ClavType
+		var err error
+		if s.Initializer != nil {
+			value, err = i.evaluate(s.Initializer)
+			if err != nil {
+				return err
+			}
+		}
+		i.environment.Define(s.Name.Lexeme, value)
 	}
 	return nil
 }
 
-func evaluate(expr parser.Expr) (types.ClavType, error) {
+func (i *Interpreter) evaluate(expr parser.Expr) (types.ClavType, error) {
 	switch e := expr.(type) {
 	case parser.Literal:
-		return evalutateLiteral(e), nil
+		return i.evalutateLiteral(e), nil
 	case parser.Grouping:
-		return evalutateGrouping(e)
+		return i.evalutateGrouping(e)
 	case parser.Unary:
-		return evalutateUnary(e)
+		return i.evalutateUnary(e)
 	case parser.Binary:
-		return evalutateBinary(e)
+		return i.evalutateBinary(e)
+	case parser.Variable:
+		return i.environment.Get(e.Name)
 	}
 	panic("Unreachable")
 }
 
-func evalutateLiteral(expr parser.Literal) types.ClavType {
+func (i *Interpreter) evalutateLiteral(expr parser.Literal) types.ClavType {
 	return expr.Value
 }
 
-func evalutateGrouping(expr parser.Grouping) (types.ClavType, error) {
-	return evaluate(expr.Expression)
+func (i *Interpreter) evalutateGrouping(expr parser.Grouping) (types.ClavType, error) {
+	return i.evaluate(expr.Expression)
 }
 
-func evalutateUnary(expr parser.Unary) (types.ClavType, error) {
-	right, err := evaluate(expr.Right)
+func (i *Interpreter) evalutateUnary(expr parser.Unary) (types.ClavType, error) {
+	right, err := i.evaluate(expr.Right)
 	if err != nil {
 		return nil, err
 	}
@@ -73,12 +93,12 @@ func evalutateUnary(expr parser.Unary) (types.ClavType, error) {
 	panic("Unreachable")
 }
 
-func evalutateBinary(expr parser.Binary) (types.ClavType, error) {
-	left, err := evaluate(expr.Left)
+func (i *Interpreter) evalutateBinary(expr parser.Binary) (types.ClavType, error) {
+	left, err := i.evaluate(expr.Left)
 	if err != nil {
 		return nil, err
 	}
-	right, err := evaluate(expr.Right)
+	right, err := i.evaluate(expr.Right)
 	if err != nil {
 		return nil, err
 	}

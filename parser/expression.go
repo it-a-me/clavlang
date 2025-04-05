@@ -31,6 +31,10 @@ type Unary struct {
 	Right    Expr
 }
 
+type Variable struct {
+	Name token.Token
+}
+
 func LispStmt(stmt Stmt) string {
 	switch s := stmt.(type) {
 	case Print:
@@ -66,7 +70,8 @@ func LispExpr(expr Expr) string {
 	return s
 }
 
-func (b Binary) expr()   {}
-func (g Grouping) expr() {}
-func (l Literal) expr()  {}
-func (u Unary) expr()    {}
+func (Binary) expr()   {}
+func (Grouping) expr() {}
+func (Literal) expr()  {}
+func (Unary) expr()    {}
+func (Variable) expr() {}
