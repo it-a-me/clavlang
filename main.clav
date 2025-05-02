@@ -3,5 +3,16 @@ print true;
 print ( 88 / 22 + 8 / 2 ) * (1-2);
 print "cow" + " " +"horse";
 
-var me = "a string";
-print me;
+var greeting = "hello";
+var name = "jhon";
+print greeting + " " + name;
+
+{
+var greeting = "hi";
+print greeting + " " + name;
+greeting = "hi, hi";
+name = "Jim";
+print greeting + " " + name;
+}
+
+print greeting + " " + name;

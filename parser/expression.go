@@ -35,6 +35,11 @@ type Variable struct {
 	Name token.Token
 }
 
+type Assign struct {
+	Name  token.Token
+	Value Expr
+}
+
 func LispStmt(stmt Stmt) string {
 	switch s := stmt.(type) {
 	case Print:
@@ -75,3 +80,4 @@ func (Grouping) expr() {}
 func (Literal) expr()  {}
 func (Unary) expr()    {}
 func (Variable) expr() {}
+func (Assign) expr() {}

@@ -49,7 +49,21 @@ func (i *Interpreter) execute(stmt parser.Stmt) error {
 			}
 		}
 		i.environment.Define(s.Name.Lexeme, value)
+	case parser.Block:
+		i.executeBlock(s.Statements)
 	}
+	return nil
+}
+
+func (i *Interpreter) executeBlock(statements []parser.Stmt) error {
+	i.environment.NewScope()
+	for _, stmt := range statements {
+		if err := i.execute(stmt); err != nil {
+			i.environment.EndScope()
+			return err
+		}
+	}
+	i.environment.EndScope()
 	return nil
 }
 
@@ -65,6 +79,12 @@ func (i *Interpreter) evaluate(expr parser.Expr) (types.ClavType, error) {
 		return i.evalutateBinary(e)
 	case parser.Variable:
 		return i.environment.Get(e.Name)
+	case parser.Assign:
+		value, err := i.evaluate(e.Value)
+		if err != nil {
+			return nil, err
+		}
+		return i.evalutateAssign(e.Name, value)
 	}
 	panic("Unreachable")
 }
@@ -169,6 +189,15 @@ func (i *Interpreter) evalutateBinary(expr parser.Binary) (types.ClavType, error
 		return nil, newInterpreterError("Can only add string or numeric types", expr.Operator)
 	}
 	return nil, nil
+}
+
+func (i *Interpreter) evalutateAssign(name token.Token, value types.ClavType) (types.ClavType, error) {
+	if v, _ := i.environment.Get(name); v != nil {
+		i.environment.Assign(name, value)
+		return value, nil
+	}
+
+	return nil, newInterpreterError("Undefined variable '"+name.Lexeme+"'", name)
 }
 
 func numeric(args ...any) (bool, string) {

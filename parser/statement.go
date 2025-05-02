@@ -6,6 +6,10 @@ type Stmt interface {
 	stmt()
 }
 
+type Block struct {
+	Statements []Stmt
+}
+
 type Expression struct {
 	Inner Expr
 }
@@ -19,6 +23,7 @@ type Var struct {
 	Initializer Expr
 }
 
+func (Block) stmt()      {}
 func (Expression) stmt() {}
 func (Print) stmt()      {}
 func (Var) stmt()        {}
